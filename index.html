@@ -139,7 +139,7 @@
 
         /* Toast Notifications */
         #toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; }
-        .toast { background: rgba(17, 24, 39, 0.95); backdrop-filter: blur(10px); border: 1px solid var(--brand-accent-border); color: white; padding: 0.75rem 1.25rem; rounded-xl; border-radius: 0.75rem; font-size: 0.875rem; font-weight: 500; display: flex; items-center; gap: 0.75rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .toast { background: rgba(17, 24, 39, 0.95); backdrop-filter: blur(10px); border: 1px solid var(--brand-accent-border); color: white; padding: 0.75rem 1.25rem; border-radius: 0.75rem; font-size: 0.875rem; font-weight: 500; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes fadeOutRight { to { transform: translateX(100%); opacity: 0; } }
     </style>
@@ -285,7 +285,6 @@
             </div>
 
             <!-- Messages Container -->
-            <!-- PRO MOBILE OPTIMIZATION: Extra padding bottom for mobile safe areas -->
             <div id="chat-container" class="flex-1 overflow-y-auto px-4 md:px-8 pb-[160px] md:pb-[180px] pt-4 md:pt-20 w-full scroll-smooth flex flex-col items-center">
                 
                 <div id="welcome-screen" class="flex flex-col items-center justify-center h-full w-full max-w-2xl animate-fade-in mt-4 md:mt-10">
@@ -316,12 +315,11 @@
                 <div id="messages-wrapper" class="w-full max-w-3xl flex flex-col gap-6 md:gap-8 pb-4"></div>
             </div>
             
-            <button id="scroll-to-bottom" class="absolute bottom-[140px] md:bottom-[160px] right-6 md:right-10 w-12 h-12 bg-gray-800 text-white rounded-full border border-white/10 shadow-2xl items-center justify-center transition-all hover:bg-gray-700 hidden z-30 hover:scale-110">
+            <button id="scroll-to-bottom" class="absolute bottom-[140px] md:bottom-[160px] right-6 md:right-10 w-12 h-12 bg-gray-800 text-white rounded-full border border-white/10 shadow-2xl flex items-center justify-center transition-all hover:bg-gray-700 hidden z-30 hover:scale-110">
                 <i class="fa-solid fa-arrow-down text-base"></i>
             </button>
 
             <!-- Input Area -->
-            <!-- PRO MOBILE OPTIMIZATION: Fixed bottom with safe-area padding -->
             <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-[#030712] via-[#030712]/95 to-transparent pt-20 pb-safe md:pb-8 px-4 md:px-8 z-20 flex justify-center pointer-events-none" style="padding-bottom: max(env(safe-area-inset-bottom, 16px), 16px);">
                 <div class="w-full max-w-3xl relative pointer-events-auto mb-2 md:mb-0">
                     
@@ -472,14 +470,13 @@
         import { getFirestore, doc, setDoc, collection, onSnapshot, getDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // --- ADMIN CONFIGURATION ---
-        // V2 App ID
         const appId = 'bramhastra-ai-v2';
         
-        // EmailJS Configuration
-        // Setup: Link arjunkokanepcold@gmail.com as the service. Create a template.
-        const EMAILJS_PUBLIC_KEY = "YOUR_EMAILJS_PUBLIC_KEY_HERE"; // Get this from EmailJS Account -> API Keys
+        // EmailJS & Gemini Configuration (YOUR KEYS INSERTED HERE)
+        const EMAILJS_PUBLIC_KEY = "nUmDcIE17UNFilnMs"; 
         const EMAILJS_SERVICE_ID = "service_20phbou";
-        const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID_HERE"; // Get this from EmailJS Email Templates
+        const EMAILJS_TEMPLATE_ID = "template_t5mbjll"; 
+        const GEMINI_API_KEY = "AQ.Ab8RN6IMOJFO5qChSMANtzQZkaWQx9hwfMea1HGF0pLkf_v27w"; 
 
         if(EMAILJS_PUBLIC_KEY !== "YOUR_EMAILJS_PUBLIC_KEY_HERE") {
             emailjs.init(EMAILJS_PUBLIC_KEY);
@@ -584,7 +581,7 @@
                 applyTheme(userSettings.theme);
                 updateProfileUI();
             } else {
-                applyTheme('theme-amber'); // Default V2 Theme
+                applyTheme('theme-amber'); 
             }
 
             try {
@@ -972,7 +969,7 @@
                     appendMessage("", 'ai', false, url);
                     chatHistory.push({ role: "model", parts: [{ text: `Generated Image:\n![Img](${url})` }] });
                 } else {
-                    const apiKey = ""; 
+                    const apiKey = GEMINI_API_KEY; 
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
                     
                     const finalSystemPrompt = `${userSettings.systemPrompt}\n\n[SYSTEM MODE ACTIVE: ${currentTask}]\n${taskPrompts[currentTask]}`;
@@ -991,7 +988,7 @@
                 if (currentUser) await saveChatToFirestore();
             } catch (err) {
                 removeElement(typingId);
-                appendMessage("Network communication failed. Please try again.", 'ai', true);
+                appendMessage("Network communication failed. Please check your API key.", 'ai', true);
                 chatHistory.pop(); 
             } finally {
                 isWaitingForResponse = false;
@@ -1111,9 +1108,8 @@
             }, (error) => {
                 console.error("Firestore Snapshot Error:", error);
                 if (error.code === 'permission-denied') {
-                    showToast("Database locked. Check Firebase Security Rules.", "error");
                     const emptyState = document.getElementById('empty-history');
-                    emptyState.innerHTML = `<i class="fa-solid fa-lock text-2xl opacity-50 text-red-400 mb-2"></i><span class="text-center">Database Locked.<br>Update Firebase Rules.</span>`;
+                    emptyState.innerHTML = `<i class="fa-solid fa-lock text-2xl opacity-50 text-red-400 mb-2"></i><span class="text-center text-red-400">Database Locked.<br>Update Firebase Rules.</span>`;
                     emptyState.classList.remove('hidden');
                 }
             });
@@ -1201,7 +1197,7 @@
             chatHistory.push({ role: "user", parts: [{ text: text }] });
 
             try {
-                const apiKey = ""; 
+                const apiKey = GEMINI_API_KEY; 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
                 
                 const voicePrompt = `${userSettings.systemPrompt}\n\n[SYSTEM VOICE CALL MODE: You are talking out loud on a phone call. Keep answers VERY brief, under 2 sentences. Sound natural and conversational. CRITICAL: Do NOT output ANY emojis, markdown formatting, asterisks, or lists.]`;
